@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Activity, BarChart3, Map, Filter, Briefcase } from 'lucide-react';
+import { Activity, BarChart3, Map, Filter, Briefcase, Code2 } from 'lucide-react';
 import axios from 'axios';
 
 const Analytics = () => {
@@ -191,6 +191,51 @@ const Analytics = () => {
                 </div>
               ) : (
                 <div className="h-80 flex items-center justify-center text-gray-500">No location data available</div>
+              )}
+            </motion.div>
+
+            {/* Top Skills */}
+            <motion.div variants={item} className="glass-card p-6 min-h-[400px]">
+               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+                <span className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-400 flex items-center justify-center mr-3">
+                  <Code2 size={16} />
+                </span>
+                Most In-Demand Skills
+              </h2>
+              {data.top_skills?.length > 0 ? (
+                <div className="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                  {data.top_skills.map((skill, index) => {
+                    const maxCount = data.top_skills[0].value;
+                    const percentage = (skill.value / maxCount) * 100;
+                    
+                    return (
+                      <div key={skill.name} className="relative pt-1">
+                        <div className="flex mb-2 items-center justify-between">
+                          <div>
+                            <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full bg-pink-50 dark:bg-pink-900/40 text-pink-600 dark:text-pink-400">
+                              {skill.name}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs font-semibold inline-block text-gray-600 dark:text-gray-300">
+                              {skill.value.toLocaleString()} jobs
+                            </span>
+                          </div>
+                        </div>
+                        <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percentage}%` }}
+                            transition={{ duration: 1, delay: index * 0.1 }}
+                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-pink-500 to-rose-500"
+                          ></motion.div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-80 flex items-center justify-center text-gray-500">No skills data available</div>
               )}
             </motion.div>
 

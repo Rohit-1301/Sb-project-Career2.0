@@ -144,10 +144,35 @@ async def get_analytics_dashboard(platform: str = Query("all", description="Filt
                 name = "Internship" if row['platform'] == 'internshala' else "Full-time"
                 job_types.append({"name": name, "value": row['count']})
                 
+        # 4. Top Skills
+        skill_counts = {}
+        text_cols = [c for c in ['title', 'description', 'job_description', 'skills'] if c in combined_df.columns]
+        if text_cols:
+            combined_df['all_text'] = combined_df[text_cols].fillna('').astype(str).agg(' '.join, axis=1).str.lower()
+            
+            TARGET_SKILLS = {
+                "React": r"\breact\b", "Node.js": r"\bnode\.?js\b", "Python": r"\bpython\b",
+                "Java": r"\bjava\b", "C++": r"\bc\+\+\b", "AWS": r"\baws\b", "SQL": r"\bsql\b",
+                "Docker": r"\bdocker\b", "TypeScript": r"\btypescript\b", "JavaScript": r"\bjavascript\b",
+                "Angular": r"\bangular\b", "Vue": r"\bvue\b", "MongoDB": r"\bmongodb\b",
+                "Express": r"\bexpress\b", "Django": r"\bdjango\b", "Kubernetes": r"\bkubernetes\b",
+                "Azure": r"\bazure\b", "Go": r"\bgo\b", "C#": r"\bc#\b", "Excel": r"\bexcel\b",
+                "HTML/CSS": r"\b(html|css)\b", "Figma": r"\bfigma\b", "Machine Learning": r"\bmachine learning\b|\bml\b"
+            }
+            
+            for skill_label, pattern in TARGET_SKILLS.items():
+                matches = combined_df['all_text'].str.contains(pattern, regex=True, na=False)
+                count = matches.sum()
+                if count > 0:
+                    skill_counts[skill_label] = int(count)
+                    
+        top_skills = [{"name": k, "value": v} for k, v in sorted(skill_counts.items(), key=lambda item: item[1], reverse=True)[:10]]
+                
         return {
             "salary_distribution": salary_dist,
             "locations": locations,
             "job_types": job_types,
+            "top_skills": top_skills,
             "total_jobs": len(combined_df)
         }
         
