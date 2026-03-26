@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquareText, Briefcase, UserRound, LogOut, X, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, MessageSquareText, Briefcase, UserRound, LogOut, X, BrainCircuit, LineChart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAuthStore from '../store/useAuthStore';
 import clsx from 'clsx';
@@ -10,6 +10,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Analytics', path: '/analytics', icon: LineChart },
     { name: 'AI Chatbot', path: '/chat', icon: MessageSquareText },
     { name: 'Recommended Jobs', path: '/jobs', icon: Briefcase },
     { name: 'Profile', path: '/profile', icon: UserRound },

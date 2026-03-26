@@ -1,0 +1,12 @@
+const recharts = require('recharts');
+console.log("BarChart:", !!recharts.BarChart);
+console.log("Bar:", !!recharts.Bar);
+console.log("XAxis:", !!recharts.XAxis);
+console.log("YAxis:", !!recharts.YAxis);
+console.log("CartesianGrid:", !!recharts.CartesianGrid);
+console.log("Tooltip:", !!recharts.Tooltip);
+console.log("ResponsiveContainer:", !!recharts.ResponsiveContainer);
+console.log("PieChart:", !!recharts.PieChart);
+console.log("Pie:", !!recharts.Pie);
+console.log("Cell:", !!recharts.Cell);
+console.log("Legend:", !!recharts.Legend);

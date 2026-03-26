@@ -8,7 +8,7 @@ from svix.webhooks import Webhook, WebhookVerificationError
 from dotenv import load_dotenv
 
 from core.database import get_supabase
-
+from api.analytics import router as analytics_router
 load_dotenv()
 
 app = FastAPI(title="CareerSathi API", description="AI Career Intelligence API")
@@ -247,6 +247,8 @@ async def get_recommended_jobs():
         {"id": 2, "title": "Data Scientist", "match": 88}
     ]}
 
+
+app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

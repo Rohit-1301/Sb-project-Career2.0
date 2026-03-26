@@ -10,6 +10,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 
 // Pages
 import Dashboard from './pages/Dashboard';
+import Analytics from './pages/Analytics';
 import Chatbot from './pages/Chatbot';
 import Jobs from './pages/Jobs';
 import Profile from './pages/Profile';
@@ -113,6 +114,7 @@ function App() {
           <Routes>
             <Route element={<DashboardLayout toggleDarkMode={toggleDarkMode} darkMode={darkMode} />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/analytics" element={<Analytics />} />
               <Route path="/chat" element={<Chatbot />} />
               <Route path="/jobs" element={<Jobs />} />
               <Route path="/profile" element={<Profile />} />
