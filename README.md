@@ -138,6 +138,28 @@ The frontend will run on `http://localhost:5173`.
 
 ---
 
+## 🐳 Running with Docker
+
+For developers cloning the repository, the entire tech stack can be spun up instantly using Docker and Docker Compose. This means you do not need to install Node.js, Python, or Conda on your local machine if Docker is installed.
+
+### 1. Configure the environments
+First, create your backend and frontend `.env` files in their respective folders tracking the guidelines above (`backend/.env` and `frontend/.env`).
+
+### 2. Run Docker Compose
+At the root of the project (where `docker-compose.yml` is located), simply run:
+```bash
+docker-compose up --build
+```
+*Wait a minute for the images to build and start.*
+
+### 3. Access the APIs
+- **Frontend App:** [http://localhost:5173](http://localhost:5173)
+- **FastAPI Backend Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+*Note: Since the apps mount their local directories as volumes (`./frontend:/app`), you can seamlessly write code on your host OS and see the Vite/FastAPI hot-reload natively inside the containers!*
+
+---
+
 ## 🚀 How to Use the App
 
 1. Open `http://localhost:5173` in your browser.
