@@ -11,7 +11,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Analytics', path: '/analytics', icon: LineChart },
-    { name: 'AI Chatbot', path: '/chat', icon: MessageSquareText },
+    { name: 'Opportunity Analyzer', path: '/chat', icon: MessageSquareText },
     { name: 'Recommended Jobs', path: '/jobs', icon: Briefcase },
     { name: 'Profile', path: '/profile', icon: UserRound },
   ];

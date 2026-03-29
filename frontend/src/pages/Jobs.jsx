@@ -153,7 +153,7 @@ const Jobs = () => {
             <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center backdrop-blur-md">
               <span className="text-xs text-gray-500 font-medium">Posted {job.posted}</span>
               <button className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                Apply Now
+                Know More
               </button>
             </div>
           </motion.div>

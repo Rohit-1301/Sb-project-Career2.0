@@ -1,4 +1,4 @@
-import { Menu, Bell, Moon, Sun, Search } from 'lucide-react';
+import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { UserButton } from "@clerk/react";
 import useAppStore from '../store/useAppStore';
 
@@ -37,10 +37,7 @@ const Topbar = ({ setSidebarOpen, toggleDarkMode, darkMode }) => {
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           
-          <button className="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 focus:outline-none transition-colors">
-            <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900 animate-pulse"></span>
-          </button>
+
 
           <div className="flex items-center pl-2 sm:pl-4 border-l border-gray-200 dark:border-gray-800">
              {/* Use Clerk's UserButton! */}
