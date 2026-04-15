@@ -1,10 +1,19 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, Target, BrainCircuit, Activity, ChevronRight, Briefcase } from 'lucide-react';
+import { TrendingUp, Target, BrainCircuit, Activity, ChevronRight, Briefcase, AlertCircle, RefreshCw } from 'lucide-react';
+import { useEffect } from 'react';
+import { useUser } from '@clerk/react';
 import useAppStore from '../store/useAppStore';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { profile, insights, jobs, activity } = useAppStore();
+  const { user } = useUser();
+  const { profile, insights, aiInsights, jobs, activity, jobsLoading, fetchRecommendations } = useAppStore();
+
+  useEffect(() => {
+    if (user?.id && jobs.length === 0) {
+      fetchRecommendations(user.id);
+    }
+  }, [user?.id]);
 
   const container = {
     hidden: { opacity: 0 },
@@ -46,18 +55,28 @@ const Dashboard = () => {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Profile Match</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">AI Match Score</h3>
               <span className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
                 <Target size={20} />
               </span>
             </div>
             <div className="mt-4 flex items-baseline">
-              <p className="text-4xl font-extrabold text-gray-900 dark:text-white">High</p>
-              <p className="ml-2 text-sm text-green-600 dark:text-green-400 flex items-center font-medium">
-                <TrendingUp size={14} className="mr-1" /> +5%
-              </p>
+              {jobsLoading ? (
+                <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              ) : (
+                <>
+                  <p className="text-4xl font-extrabold text-gray-900 dark:text-white">
+                    {aiInsights.match_score > 0 ? `${aiInsights.match_score}%` : 'N/A'}
+                  </p>
+                  {aiInsights.match_score > 0 && (
+                    <p className="ml-2 text-sm text-green-600 dark:text-green-400 flex items-center font-medium">
+                      <TrendingUp size={14} className="mr-1" /> AI-scored
+                    </p>
+                  )}
+                </>
+              )}
             </div>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Competitiveness score</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Based on your profile & market</p>
           </div>
         </motion.div>
 
@@ -148,28 +167,46 @@ const Dashboard = () => {
         </motion.div>
 
         <div className="space-y-6">
-          {/* Career Insights */}
-          <motion.div variants={item} className="glass-card overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 backdrop-blur-md bg-white/40 dark:bg-gray-900/40">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">AI Insights</h2>
-            </div>
-            <div className="p-6 space-y-5">
-              {insights.map((insight) => (
-                <div key={insight.id}>
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span className="font-semibold text-gray-600 dark:text-gray-300">{insight.category}</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{insight.value}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-primary-500 to-blue-500 h-2 rounded-full" 
-                      style={{ width: `${insight.percentage}%` }}
-                    ></div>
-                  </div>
+        {/* AI Insights sidebar card */}
+        <motion.div variants={item} className="glass-card overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 backdrop-blur-md bg-white/40 dark:bg-gray-900/40 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">AI Insights</h2>
+            {jobsLoading && <RefreshCw size={14} className="animate-spin text-primary-500" />}
+          </div>
+          <div className="p-6 space-y-5">
+            {insights.length > 0 ? insights.map((insight) => (
+              <div key={insight.id}>
+                <div className="flex justify-between items-center text-sm mb-2">
+                  <span className="font-semibold text-gray-600 dark:text-gray-300">{insight.category}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{insight.value}</span>
                 </div>
-              ))}
-            </div>
-          </motion.div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-primary-500 to-blue-500 h-2 rounded-full transition-all duration-700"
+                    style={{ width: `${insight.percentage}%` }}
+                  />
+                </div>
+              </div>
+            )) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                {jobsLoading ? 'Generating AI insights…' : 'Complete your profile to see AI insights.'}
+              </p>
+            )}
+            {aiInsights.suggestions?.length > 0 && (
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">AI Suggestions</p>
+                <ul className="space-y-2">
+                  {aiInsights.suggestions.slice(0, 2).map((s, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                      <AlertCircle size={12} className="text-amber-500 mt-0.5 shrink-0" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
           {/* Activity Feed */}
           <motion.div variants={item} className="glass-card overflow-hidden">

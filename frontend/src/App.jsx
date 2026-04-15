@@ -20,7 +20,7 @@ import useAppStore from './store/useAppStore';
 // Dedicated Component to Sync User with backend and then load their profile
 const UserSyncer = () => {
   const { user, isLoaded, isSignedIn } = useUser();
-  const { fetchProfile } = useAppStore();
+  const { fetchProfile, fetchRecommendations } = useAppStore();
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
@@ -30,9 +30,11 @@ const UserSyncer = () => {
         first_name: user.firstName || "",
         last_name: user.lastName || "",
         image_url: user.imageUrl || ""
-      }).then(() => {
-        // After syncing, fetch the full profile (career data) from Supabase
-        fetchProfile(user.id);
+      }).then(async () => {
+        // 1. Load user profile
+        await fetchProfile(user.id);
+        // 2. Pre-fetch AI job recommendations (uses cache if fresh)
+        fetchRecommendations(user.id);
       }).catch(err => console.error("Sync error:", err));
     }
   }, [user, isLoaded, isSignedIn]);

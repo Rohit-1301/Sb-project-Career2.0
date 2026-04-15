@@ -4,12 +4,17 @@ from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 import os
+import logging
 from svix.webhooks import Webhook, WebhookVerificationError
 from dotenv import load_dotenv
 
 from core.database import get_supabase
 from api.analytics import router as analytics_router
+from routes.job_fit import router as job_fit_router
+from routes.jobs import router as jobs_router
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="CareerSathi API", description="AI Career Intelligence API")
 
@@ -232,23 +237,20 @@ async def clerk_webhook(request: Request):
     return {"status": "ignored"}
 
 
-@app.post("/api/chat")
-async def chat_with_ai(chat: ChatMessage):
-    msg = chat.message.lower()
-    if 'job' in msg:
-        return {"response": "Based on your profile, Machine Learning Engineer at NeuralTech AI is a great match!"}
-    return {"response": "I am an AI assistant. Ask me about jobs or career advice!"}
-
-
-@app.get("/api/jobs")
-async def get_recommended_jobs():
-    return {"jobs": [
-        {"id": 1, "title": "Machine Learning Engineer", "match": 95},
-        {"id": 2, "title": "Data Scientist", "match": 88}
-    ]}
-
-
+# ── AI-powered routes ─────────────────────────────────────────────────────
+app.include_router(job_fit_router, prefix="/api", tags=["AI Job Fit"])
+app.include_router(jobs_router, prefix="/api", tags=["Jobs"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
+
+
+@app.on_event("startup")
+async def startup_event():
+    import logging
+    logger = logging.getLogger("uvicorn")
+    logger.info("🚀 CareerSathi AI backend started.")
+    logger.info("   Embedding model will load on first request (all-MiniLM-L6-v2).")
+    logger.info("   LLM: gemini-3-flash-preview via LangChain")
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
