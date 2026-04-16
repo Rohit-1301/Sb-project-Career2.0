@@ -1,168 +1,178 @@
-# CareerSathi AI Platform 🚀
+# CareerSathi 2.0 - AI-Powered Career Ecosystem
 
-A modern, full-stack AI Career Intelligence Platform built with React (Vite), FastAPI, Clerk Authentication, and Supabase. The project features a stunning SaaS-style glassmorphic UI, real-time resume uploads, an AI chatbot interface, and personalized job recommendations.
+An intelligent, data-driven career alignment platform that leverages Large Language Models (LLMs) and advanced Vector Search (RAG) to bridge the gap between job seekers and their ideal roles. CareerSathi provides hyper-personalized job recommendations, real-time market analytics, and deep-dive opportunity analysis.
 
-## 🌟 Features
+![CareerSathi Banner](https://via.placeholder.com/1200x400/1e40af/ffffff?text=CareerSathi+AI+Platform)
 
-- **Authentication:** Secure user login and registration powered by **Clerk**.
-- **User Profiles:** Manage career information, skills, and experience.
-- **Resume Uploads:** Upload resumes (PDF/DOCX) securely to **Supabase Storage**.
-- **AI Chatbot:** An interactive assistant for career guidance.
-- **Job Recommendations:** AI-driven job matching based on user profiles.
+## 🌟 Key Features
+
+1. **AI Job Alignment Engine (RAG Pipeline)**
+   - Uses `SentenceTransformers` (`all-MiniLM-L6-v2`) to create high-dimensional vector embeddings of user profiles (skills, experience, bio) and job descriptions.
+   - Performs blazing-fast Cosine Similarity searches using **pgvector** inside Supabase to find semantically matching jobs.
+   - Applies strict heuristic filters to ensure seniority and experience alignment (preventing junior candidates from seeing senior roles).
+
+2. **Opportunity Analyzer (Custom JD Evaluation)**
+   - Allows users to paste any external job description into the platform.
+   - Uses **Google Gemini 1.5 Flash** to perform a hyper-critical, recruiter-level evaluation of the user's profile against the custom job.
+   - Generates a 5-Section Coaching Report: Match Justification, Core Strengths, Critical Missing Skills / Gaps, Growth Roadmap, and Application Strategy.
+
+3. **Live Market Analytics Dashboard**
+   - Ingests tens of thousands of scraped jobs from top platforms (Wellfound, Internshala, Indeed, Naukri).
+   - Aggregates salary distributions, job types, top geographical locations, and the most in-demand tech stacks.
+   - Beautiful, interactive data visualizations built with `Recharts`.
+
+4. **Automated Data Scraping Pipeline**
+   - Python-based web scrapers utilizing Playwright and BeautifulSoup to extract and structure live market data seamlessly.
+
+---
+
+## 🏗️ Technical Architecture & Diagram
+
+CareerSathi operates on a decoupled Client-Server architecture with a unified database layer.
+
+```mermaid
+graph TD
+    %% Frontend Layer
+    subgraph Frontend [Client / User Interface]
+        UI[React + Tailwind UI]
+        State[Zustand Store]
+        Auth_Clerk[Clerk Auth]
+        UI -- Tracks State --> State
+        UI -- Authenticates --> Auth_Clerk
+    end
+
+    %% Backend API
+    subgraph Backend [FastAPI Backend]
+        API[FastAPI Router]
+        LLM[Google Gemini API]
+        Embed[SentenceTransformers Model]
+        Analytics[Pandas Aggregation Engine]
+        API -- "Get Insights" --> LLM
+        API -- "Create Vector" --> Embed
+        API -- "Parse Data" --> Analytics
+    end
+
+    %% Storage & Scraping
+    subgraph Storage [Supabase / Data Layer]
+        PG[PostgreSQL + pgvector]
+        JSON[Raw JSON Datasets]
+    end
+
+    %% Scrapers
+    subgraph Scrapers [Data Collection]
+        playwright[Playwright Scrapers]
+        playwright -- "Save JSON" --> JSON
+    end
+
+    %% Connections
+    UI -- "REST/JSON" --> API
+    API -- "Vector Similarity RPC" --> PG
+    API -- "Fetch Jobs" --> PG
+    Analytics -- "Load" --> JSON
+```
+
+---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** React.js with Vite
-- **Styling:** Tailwind CSS (Glassmorphism & Dark Mode)
-- **State Management:** Zustand
-- **Authentication:** Clerk React SDK
-- **Routing:** React Router DOM
-- **HTTP Client:** Axios
+- **Framework Framework**: React 18 (Vite)
+- **Styling**: TailwindCSS, Headless UI, Framer Motion
+- **State Management**: Zustand
+- **Data Visualization**: Recharts
+- **Authentication**: Clerk
 
 ### Backend
-- **Framework:** FastAPI (Python)
-- **Database:** Supabase (PostgreSQL)
-- **Storage:** Supabase Storage (Buckets)
-- **Authentication Sync:** Svix (Clerk Webhooks) / Direct API Sync
+- **Web Framework**: FastAPI (Python 3.10+)
+- **AI & NLP**: Google GenAI (`gemini-1.5-flash`), `sentence-transformers`
+- **Data Processing**: Pandas, NumPy
+- **Server Environment**: Docker, Uvicorn
+
+### Database & Infrastructure
+- **Database**: Supabase (PostgreSQL)
+- **Vector Search**: pgvector extension (ivfflat indexing)
+- **Containerization**: Docker & Docker Compose
 
 ---
 
-## ⚡ Quick Start Guide
+## 🚀 Getting Started
 
-Follow these steps to run the project locally on your machine.
+Follow these instructions to get a local copy of the project up and running.
 
 ### Prerequisites
-- Node.js (v18+ recommended)
-- Miniconda or Anaconda (for Python environment)
-- A Supabase account
-- A Clerk account
+- Docker and Docker Compose
+- Node.js (v18+)
+- Python 3.10+
+- A [Supabase](https://supabase.com/) Account & Project
+- A Google Gemini API Key
 
-### 1. Supabase Setup (Database & Storage)
-
-1. Go to your [Supabase Dashboard](https://supabase.com/dashboard) and create a new project.
-2. Open the **SQL Editor**, and run the following queries to create the tables:
-
-```sql
--- TABLE: users
-CREATE TABLE public.users (
-    id TEXT PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
-    first_name TEXT,
-    last_name TEXT,
-    image_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
-);
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_users" ON public.users FOR ALL USING (true) WITH CHECK (true);
-
--- TABLE: profiles
-CREATE TABLE public.profiles (
-    id TEXT PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
-    title TEXT DEFAULT '',
-    bio TEXT DEFAULT '',
-    experience TEXT DEFAULT '0-1 years',
-    skills TEXT[] DEFAULT '{}',
-    resume_url TEXT DEFAULT '',
-    resume_name TEXT DEFAULT '',
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
-);
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
-```
-
-3. Open **Storage** in Supabase and create a new bucket named exactly `resumes`. **Make sure to mark it as PUBLIC**.
-
----
-
-### 2. Backend Setup (FastAPI)
-
-1. Navigate to the `backend` folder:
+### 1. Clone the repository
 ```bash
-cd backend
+git clone https://github.com/your-username/CareerSathi-2.0.git
+cd CareerSathi-2.0
 ```
 
-2. Create and activate a Conda environment:
-```bash
-conda create -n fastapi-env python=3.10 -y
-conda activate fastapi-env
-```
+### 2. Environment Variables Integration
+You will need to set up two `.env` files.
 
-3. Install the required Python packages:
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure Environment Variables:
-Create a `.env` file inside the `backend` directory (copy from `.env.example` if available):
+**Backend (`backend/.env`):**
 ```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
-```
-*(The `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security so your backend can safely manage users).*
-
-5. Run the FastAPI server:
-```bash
-uvicorn main:app --reload
-```
-The backend will run on `http://localhost:8000`.
-
----
-
-### 3. Frontend Setup (React + Vite)
-
-1. Open a new terminal and navigate to the `frontend` folder:
-```bash
-cd frontend
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_or_service_key
+GEMINI_API_KEY=your_google_gemini_api_key
 ```
 
-2. Install Node.js dependencies:
-```bash
-npm install
-```
-
-3. Configure Environment Variables:
-Create a `.env` file inside the `frontend` directory:
+**Frontend (`frontend/.env`):**
 ```env
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_API_BASE_URL=http://localhost:8000/api
 ```
-*(You can get your Clerk Publishable Key from the Clerk Dashboard under API Keys).*
 
-4. Run the development server:
+### 3. Database Setup (Supabase)
+Navigate to your Supabase SQL Editor and execute the schema provided in `backend/supabase_fix.sql`. This will:
+- Enable the `vector` extension.
+- Create all core tables (`users`, `jobs`, `user_embeddings`, `job_matches`, `insights_cache`).
+- Deploy the highly-optimized `match_jobs` RPC function for Cosine Similarity calculations.
+
+### 4. Running the Application (Dockerized)
+The easiest way to run the entire backend stack is via Docker.
+
 ```bash
+# Build and start the backend containers
+docker-compose up --build -d
+```
+*The backend API will be available at `http://localhost:8000`.*
+
+### 5. Running the Frontend
+Navigate to the frontend directory and start the Vite development server.
+
+```bash
+cd frontend
+npm install
 npm run dev
 ```
-The frontend will run on `http://localhost:5173`.
+*The client app will be accessible at `http://localhost:5173`.*
 
 ---
 
-## 🐳 Running with Docker
+## 🧠 Core Systems Deep Dive
 
-For developers cloning the repository, the entire tech stack can be spun up instantly using Docker and Docker Compose. This means you do not need to install Node.js, Python, or Conda on your local machine if Docker is installed.
+### The RAG Pipeline (`rag_pipeline.py`)
+1. Fetches the user's saved profile from Supabase.
+2. Converts the profile text into a 384-dimensional dense vector using `all-MiniLM-L6-v2`.
+3. Calls the Supabase RPC function `match_jobs` to execute mathematical `Cosine Similarity` against tens of thousands of jobs mathematically instantly.
+4. Drops out jobs explicitly asking for advanced seniority if the user is a junior candidate.
+5. Feeds the top 10 remaining semantic matches to Gemini to generate personalized gap analysis and suggestions.
 
-### 1. Configure the environments
-First, create your backend and frontend `.env` files in their respective folders tracking the guidelines above (`backend/.env` and `frontend/.env`).
-
-### 2. Run Docker Compose
-At the root of the project (where `docker-compose.yml` is located), simply run:
-```bash
-docker-compose up --build
-```
-*Wait a minute for the images to build and start.*
-
-### 3. Access the APIs
-- **Frontend App:** [http://localhost:5173](http://localhost:5173)
-- **FastAPI Backend Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-
-*Note: Since the apps mount their local directories as volumes (`./frontend:/app`), you can seamlessly write code on your host OS and see the Vite/FastAPI hot-reload natively inside the containers!*
+### Opportunity Analyzer (`analyze.py`)
+Bypasses the vector search entirely. Feeds the candidate's profile along with 100% of a user-pasted Job Description into Gemini. We specifically structured the LLM Prompt Schema to forcefully extract harsh truths, preventing AI hallucinations and strictly identifying missing technical skills.
 
 ---
 
-## 🚀 How to Use the App
+## 📝 License
+Distributed under the MIT License. See `LICENSE` for more information.
 
-1. Open `http://localhost:5173` in your browser.
-2. Sign up or log in using Clerk.
-3. Upon login, the app will automatically sync your Clerk identity to the Supabase Postgres database via the backend API!
-4. Navigate to the **Profile** tab to upload your resume to Supabase Storage and manage your career details.
+## 🤝 Contact
+Designed and Built by [Your Name / Team] for bridging the gap between talent and opportunity.
