@@ -60,7 +60,7 @@ async def analyze_job(request: AnalyzeJobRequest):
             "company": "External Company",
             "location": "Any",
             "experience": "Any",
-            "match": 100,  # placeholder
+            "match": "N/A",  # Tell AI to calculate this purely from text
             "description": request.job_description
         }
 

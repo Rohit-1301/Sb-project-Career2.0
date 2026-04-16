@@ -148,11 +148,19 @@ def generate_insights(
 
     # Build compact job listing text for the prompt
     jobs_lines = []
+    # If analyzing a single custom job (Opportunity Analyzer), feed the full description (up to 8000 chars)
+    # If analyzing 10 jobs (Dashboard RAG), truncate to 300 chars to save context window and avoid dilution.
+    desc_limit = 8000 if len(retrieved_jobs) == 1 else 300
+
     for i, job in enumerate(retrieved_jobs[:10], start=1):
+        match_val = job.get('match')
+        # If match is a number, tell AI it's a pre-calculated vector match. If 'N/A', force AI to calculate purely from text.
+        match_str = f"{match_val}%" if isinstance(match_val, (int, float)) else "To be calculated objectively by you"
+        
         jobs_lines.append(
             f"{i}. [{job['id']}] {job['title']} at {job['company']} "
-            f"({job['location']}) | {job['experience']} | Match: {job['match']}%\n"
-            f"   Description: {(job.get('description') or '')[:300]}"
+            f"({job['location']}) | {job['experience']} | Vector Match: {match_str}\n"
+            f"   Description: {(job.get('description') or '')[:desc_limit]}"
         )
     jobs_text = "\n\n".join(jobs_lines)
 
