@@ -22,6 +22,14 @@ export const runJobFit = async (userId) => {
   return res.data;
 };
 
+/**
+ * Trigger custom job analysis for a specific JD.
+ */
+export const analyzeCustomJob = async (userId, jobDescription) => {
+  const res = await api.post('/analyze-job', { user_id: userId, job_description: jobDescription });
+  return res.data;
+};
+
 // ── Job Recommendations (cached) ───────────────────────────────────────────
 /**
  * Fetch cached job recommendations from Supabase for a user.

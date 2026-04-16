@@ -12,6 +12,7 @@ from core.database import get_supabase
 from api.analytics import router as analytics_router
 from routes.job_fit import router as job_fit_router
 from routes.jobs import router as jobs_router
+from routes.analyze import router as analyze_router
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -263,6 +264,7 @@ async def clerk_webhook(request: Request):
 
 # ── AI-powered routes ─────────────────────────────────────────────────────
 app.include_router(job_fit_router, prefix="/api", tags=["AI Job Fit"])
+app.include_router(analyze_router, prefix="/api", tags=["AI Job Analysis"])
 app.include_router(jobs_router, prefix="/api", tags=["Jobs"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
