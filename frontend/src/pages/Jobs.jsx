@@ -9,6 +9,7 @@ const Jobs = () => {
   const { jobs, jobsLoading, aiInsights, profile, fetchRecommendations } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('All');
+  const [expandedJobId, setExpandedJobId] = useState(null);
 
   // Fetch real AI-powered recommendations on mount
   useEffect(() => {
@@ -245,21 +246,57 @@ const Jobs = () => {
 
                   <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center backdrop-blur-md">
                     <span className="text-xs text-gray-500 font-medium">Posted {job.posted || 'Recently'}</span>
-                    {job.url ? (
-                      <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                      >
-                        Know More
-                      </a>
-                    ) : (
-                      <button className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all">
-                        Know More
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
+                            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-xl transition-all"
+                        >
+                            {expandedJobId === job.id ? 'Show Less' : 'Know More'}
+                        </button>
+                        {job.url && (
+                          <a
+                            href={job.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                          >
+                            Apply Now
+                          </a>
+                        )}
+                    </div>
                   </div>
+
+                  <AnimatePresence>
+                    {expandedJobId === job.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700/50 flex flex-col gap-4 overflow-hidden"
+                      >
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Areas to Improve</p>
+                            <div className="flex flex-wrap gap-2">
+                              {(job.missing_skills || []).length > 0 ? job.missing_skills.map((skill) => (
+                                <span key={skill} className="px-2.5 py-1 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 rounded-md flex items-center gap-1">
+                                  <AlertCircle size={10} /> {skill}
+                                </span>
+                              )) : (
+                                <span className="text-sm text-gray-500">You matched perfectly! No critical missing skills.</span>
+                              )}
+                            </div>
+                        </div>
+                        {job.improvement_tips && (
+                            <div>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">AI Coach Tip</p>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                                   {job.improvement_tips}
+                                </p>
+                            </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               ))
             ) : (

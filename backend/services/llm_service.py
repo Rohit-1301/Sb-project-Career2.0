@@ -38,7 +38,7 @@ def _build_chain():
         raise EnvironmentError("GEMINI_API_KEY is not set in environment variables.")
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",        # gemini-3-flash-preview maps to this SDK alias
+        model="gemini-3-flash-preview",
         google_api_key=api_key,
         temperature=0.3,
         max_output_tokens=2048,
@@ -66,7 +66,9 @@ Based on the user profile and the jobs above, respond with ONLY the following JS
   "job_insights": [
     {{
       "job_id": "<job id string>",
-      "matched_skills": [<skills from user profile that match this specific job>]
+      "matched_skills": [<skills from user profile that match this specific job>],
+      "missing_skills": [<skills the user is lacking for this specific job>],
+      "improvement_tips": "<short advice on how to improve for this job specifically>"
     }}
   ]
 }}

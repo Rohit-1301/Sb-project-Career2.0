@@ -196,13 +196,20 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
         profile_text=profile_text,
     )
 
-    # ── 6. Enrich jobs with per-job matched skills ────────────────────────
+    # ── 6. Enrich jobs with per-job matched skills & insights ─────────────
     job_insights_map = {
-        ji["job_id"]: ji.get("matched_skills", [])
+        ji["job_id"]: {
+            "matched_skills": ji.get("matched_skills", []),
+            "missing_skills": ji.get("missing_skills", []),
+            "improvement_tips": ji.get("improvement_tips", "")
+        }
         for ji in insights.get("job_insights", [])
     }
     for job in top_jobs:
-        job["skills"] = job_insights_map.get(str(job["id"]), [])
+        ji = job_insights_map.get(str(job["id"]), {})
+        job["skills"] = ji.get("matched_skills", [])
+        job["missing_skills"] = ji.get("missing_skills", [])
+        job["improvement_tips"] = ji.get("improvement_tips", "")
 
     # ── 7. Persist to Supabase ────────────────────────────────────────────
     _save_job_matches(supabase, user_id, top_jobs)
