@@ -38,7 +38,7 @@ def _build_chain():
         raise EnvironmentError("GEMINI_API_KEY is not set in environment variables.")
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",        # gemini-3-flash-preview maps to this SDK alias
+        model="gemini-3-flash-preview",        # gemini-3-flash-preview maps to this SDK alias
         google_api_key=api_key,
         temperature=0.3,
         max_output_tokens=2048,
