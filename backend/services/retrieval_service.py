@@ -52,6 +52,7 @@ def search_similar_jobs(
     query_embedding: List[float],
     top_k: int = 10,
     threshold: float = 0.20,
+    user_experience: str = "",
 ) -> List[dict]:
     """
     Call the Supabase `match_jobs` RPC function.
@@ -60,19 +61,55 @@ def search_similar_jobs(
     """
     supabase = get_supabase()
 
+    # Fetch a larger pool if we need to filter by experience
+    fetch_count = top_k * 4 if user_experience else top_k
+
     try:
         # Primary path: use the fast ivfflat-indexed RPC function
         result = supabase.rpc(
             "match_jobs",
             {
                 "query_embedding": query_embedding,
-                "match_count": top_k,
+                "match_count": fetch_count,
                 "match_threshold": threshold,
             },
         ).execute()
 
         jobs = result.data or []
-        logger.info(f"🔍 match_jobs RPC returned {len(jobs)} results.")
+        
+        # Apply experience heuristic filter
+        if user_experience and jobs:
+            import re
+            user_exp_lower = user_experience.lower()
+            is_fresher = "0-1" in user_exp_lower or "0" in user_exp_lower or "fresher" in user_exp_lower
+            
+            processed = []
+            for job in jobs:
+                job_exp = str(job.get("experience") or "").lower()
+                job_desc = str(job.get("description") or "").lower()
+                combined_text = job_exp + " " + job_desc
+                
+                # STRICT FILTER: If user is a fresher/junior, completely drop jobs asking for senior experience (3+ years)
+                if is_fresher:
+                    # Also drop typical senior keywords
+                    if re.search(r'(3|4|5|6|7|8|9|10)\+?\s*(years|yrs|y)\s+(of\s+)?(experience|exp|professional)', combined_text) or "senior" in job_exp or "manager" in job_exp:
+                        continue # Drop job entirely
+                        
+                processed.append(job)
+                
+            # Fallback if strict filtering removed too many jobs (e.g. all jobs were senior)
+            if len(processed) < top_k and len(jobs) >= top_k:
+                # We need top_k results. If strict filtering failed, add back the penalized ones
+                for job in jobs:
+                    if job not in processed and len(processed) < top_k:
+                        job["similarity"] -= 0.3 # Heavy penalty but keeping it to fill quota
+                        processed.append(job)
+
+            # Re-sort and slice to top_k
+            processed.sort(key=lambda x: x["similarity"], reverse=True)
+            jobs = processed[:top_k]
+
+        logger.info(f"🔍 match_jobs RPC returned {len(jobs)} results after experience filter.")
         return jobs
 
     except Exception as rpc_exc:

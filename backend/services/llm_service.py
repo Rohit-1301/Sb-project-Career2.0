@@ -76,8 +76,9 @@ Respond with ONLY this JSON object (no other text):
   "job_insights": [
     {{
       "job_id": "<exact job id as provided above>",
+      "match_score": <integer 0-100 indicating how well the user fits this role. >90 if 0 missing skills.>,
       "matched_skills": [<skills the user HAS that match THIS specific job>],
-      "missing_skills": [<skills the user LACKS for THIS specific job>],
+      "missing_skills": [<Array of specific technologies, frameworks, or tools required by the job that are NOT explicitly mentioned in the user profile. You MUST be highly critical. If none, return an empty array [], DO NOT return ["None"]>],
       "alignment_review": "<The full 5-section coaching analysis, with sections separated by \\n\\n>"
     }}
   ]

@@ -196,7 +196,11 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
 
     # ── 4. Vector similarity search ───────────────────────────────────────
     logger.info("Running pgvector similarity search…")
-    raw_jobs = search_similar_jobs(query_embedding=user_embedding, top_k=10)
+    raw_jobs = search_similar_jobs(
+        query_embedding=user_embedding, 
+        top_k=10, 
+        user_experience=profile.get("experience", "")
+    )
     top_jobs = format_jobs_for_frontend(raw_jobs, user_skills=profile.get("skills", []))
 
     if not top_jobs:
@@ -221,6 +225,7 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
     # ── 6. Enrich jobs with per-job matched skills & insights ─────────────
     job_insights_map = {
         ji["job_id"]: {
+            "match_score": ji.get("match_score"),
             "matched_skills": ji.get("matched_skills", []),
             "missing_skills": ji.get("missing_skills", []),
             "alignment_review": ji.get("alignment_review", "")
@@ -229,6 +234,8 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
     }
     for job in top_jobs:
         ji = job_insights_map.get(str(job["id"]), {})
+        if ji.get("match_score") is not None:
+            job["match"] = ji["match_score"]
         job["skills"] = ji.get("matched_skills", [])
         job["missing_skills"] = ji.get("missing_skills", [])
         job["alignment_review"] = ji.get("alignment_review", "")
