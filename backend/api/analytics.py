@@ -78,17 +78,64 @@ def get_internshala_data():
         
     return df
 
+def get_indeed_data():
+    import glob
+    dfs = []
+    # Load all indeed json files
+    for file in glob.glob(os.path.join(DATA_DIR, "indeed*.json")):
+        try:
+            with open(file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if data:
+                df = pd.DataFrame(data)
+                df['platform'] = 'indeed'
+                # Indeed doesn't have a standardized parsing logic built yet, so leave parsed_salary empty or run basic extractor
+                if 'salary' in df.columns:
+                    df['parsed_salary'] = df['salary'].apply(parse_wellfound_salary) # Re-use wellfound parser as a heuristic
+                else:
+                    df['parsed_salary'] = None
+                dfs.append(df)
+        except Exception:
+            pass
+    return pd.concat(dfs, ignore_index=True) if dfs else []
+
+def get_naukri_data():
+    import glob
+    dfs = []
+    # Load up to 5 Naukri files to avoid extreme memory bloat
+    for file in glob.glob(os.path.join(DATA_DIR, "naukri*.json"))[:5]:
+        try:
+            with open(file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if data:
+                df = pd.DataFrame(data)
+                df['platform'] = 'naukri'
+                if 'salary' in df.columns:
+                    df['parsed_salary'] = df['salary'].apply(parse_wellfound_salary)
+                else:
+                    df['parsed_salary'] = None
+                dfs.append(df)
+        except Exception:
+            pass
+    return pd.concat(dfs, ignore_index=True) if dfs else []
+
 @router.get("/dashboard")
-async def get_analytics_dashboard(platform: str = Query("all", description="Filter by platform (wellfound, internshala, all)")):
+async def get_analytics_dashboard(platform: str = Query("all", description="Filter by platform (wellfound, internshala, indeed, naukri, all)")):
     try:
         df_w = get_wellfound_data()
         df_i = get_internshala_data()
+        df_ind = get_indeed_data()
+        df_n = get_naukri_data()
         
         dfs = []
         if isinstance(df_w, pd.DataFrame) and not df_w.empty and platform in ["all", "wellfound"]:
             dfs.append(df_w)
         if isinstance(df_i, pd.DataFrame) and not df_i.empty and platform in ["all", "internshala"]:
             dfs.append(df_i)
+        if isinstance(df_ind, pd.DataFrame) and not df_ind.empty and platform in ["all", "indeed"]:
+            dfs.append(df_ind)
+        if isinstance(df_n, pd.DataFrame) and not df_n.empty and platform in ["all", "naukri"]:
+            dfs.append(df_n)
             
         if not dfs:
             return {"salary_distribution": [], "locations": [], "job_types": []}

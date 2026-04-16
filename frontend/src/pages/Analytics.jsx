@@ -69,6 +69,8 @@ const Analytics = () => {
             <option value="all">All Platforms</option>
             <option value="wellfound">Wellfound</option>
             <option value="internshala">Internshala</option>
+            <option value="indeed">Indeed</option>
+            <option value="naukri">Naukri</option>
           </select>
         </div>
       </motion.div>
