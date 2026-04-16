@@ -84,7 +84,7 @@ async def analyze_job(request: AnalyzeJobRequest):
 
         return {
             "status": "success",
-            "match_score": insights.get("match_score", 0),
+            "match_score": job_insight.get("match_score", insights.get("match_score", 0)),
             "matched_skills": job_insight.get("matched_skills", []),
             "missing_skills": job_insight.get("missing_skills", []),
             "alignment_review": job_insight.get("alignment_review", ""),
