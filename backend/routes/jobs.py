@@ -37,7 +37,7 @@ async def upload_jobs(request: JobUploadRequest):
     Reads JSON files from /data/, embeds with all-MiniLM-L6-v2,
     and inserts into the Supabase `jobs` table.
     """
-    valid_sources = ["naukri", "indeed", "wellfound"]
+    valid_sources = ["naukri", "indeed", "wellfound", "internshala"]
     if request.source not in valid_sources:
         raise HTTPException(
             status_code=400,

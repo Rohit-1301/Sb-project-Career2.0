@@ -35,6 +35,7 @@ SOURCE_PATTERNS = {
     "naukri":    "naukri_jobs*.json",
     "indeed":    "indeed_*.json",
     "wellfound": "wellfound_*.json",
+    "internshala": "internshala_*.json",
 }
 
 

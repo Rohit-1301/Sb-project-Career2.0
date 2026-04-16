@@ -91,5 +91,6 @@ def build_profile_text(profile: dict) -> str:
         profile.get("experience", ""),
         f"Skills: {skills_str}" if skills_str else "",
         profile.get("bio", ""),
+        profile.get("resume_text", ""),
     ]
     return " | ".join(p for p in parts if p)

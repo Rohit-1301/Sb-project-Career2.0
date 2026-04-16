@@ -161,3 +161,43 @@ def _empty_insights() -> Dict[str, Any]:
         "suggestions": ["Please complete your profile for personalised AI insights."],
         "job_insights": [],
     }
+
+def extract_skills_from_resume(resume_text: str) -> List[str]:
+    """
+    Extract a list of professional skills from a raw resume text block.
+    """
+    if not resume_text or not resume_text.strip():
+        return []
+
+    try:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return []
+
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-3-flash-preview",
+            google_api_key=api_key,
+            temperature=0.1,
+        )
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "Extract all professional skills (technical, tools, methodologies, soft skills) from the provided resume text. Return ONLY a JSON array of strings. Example: [\"Python\", \"Data Analysis\", \"Communication\"]. Do not wrap the response in markdown blocks like ```json."),
+            ("human", "RESUME TEXT:\n{resume_text}")
+        ])
+
+        chain = prompt | llm | StrOutputParser()
+        raw = chain.invoke({"resume_text": resume_text[:8000]})  # constrain size
+
+        cleaned = re.sub(r"```(?:json)?|```", "", raw).strip()
+        skills = json.loads(cleaned)
+        
+        if isinstance(skills, list):
+            return [str(s).strip() for s in skills if str(s).strip()]
+        return []
+    except Exception as exc:
+        logger.error(f"Error extracting skills from resume: {exc}", exc_info=True)
+        return []

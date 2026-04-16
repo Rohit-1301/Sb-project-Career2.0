@@ -146,14 +146,33 @@ async def upload_resume(user_id: str, file: UploadFile = File(...)):
         # Get public URL
         public_url = supabase.storage.from_("resumes").get_public_url(storage_path)
 
+        # Parse text from resume
+        from utils.resume_parser import parse_resume_bytes
+        resume_text = parse_resume_bytes(contents, file.content_type)
+
+        # Extract skills using Gemini LLM
+        from services.llm_service import extract_skills_from_resume
+        extracted_skills = extract_skills_from_resume(resume_text)
+
+        # Merge extracted skills with existing user skills to prevent data loss
+        existing = supabase.table("profiles").select("skills").eq("id", user_id).single().execute()
+        current_skills = existing.data.get("skills", []) if (existing.data and existing.data.get("skills")) else []
+        all_skills = list(set(current_skills + extracted_skills))
+
         # Save URL and filename into profiles
         from datetime import datetime, timezone
         supabase.table("profiles").upsert({
             "id": user_id,
             "resume_url": public_url,
             "resume_name": file.filename,
+            "resume_text": resume_text,
+            "skills": all_skills,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }).execute()
+
+        # Clear AI cache to regenerate recommendations using the new resume
+        supabase.table("insights_cache").delete().eq("user_id", user_id).execute()
+        supabase.table("user_embeddings").delete().eq("user_id", user_id).execute()
 
         return {"status": "success", "resume_url": public_url, "resume_name": file.filename}
     except Exception as e:
@@ -177,8 +196,13 @@ async def delete_resume(user_id: str):
         supabase.table("profiles").update({
             "resume_url": "",
             "resume_name": "",
+            "resume_text": "",
             "updated_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", user_id).execute()
+
+        # Clear AI cache to reset recommendations
+        supabase.table("insights_cache").delete().eq("user_id", user_id).execute()
+        supabase.table("user_embeddings").delete().eq("user_id", user_id).execute()
 
         return {"status": "success", "message": "Resume deleted"}
     except Exception as e:

@@ -55,6 +55,7 @@ Career-specific data for each user. One-to-one with `users`.
 | `skills` | `TEXT[]` | Array of skill strings |
 | `resume_url` | `TEXT` | Public URL to uploaded resume |
 | `resume_name` | `TEXT` | Original filename of uploaded resume |
+| `resume_text` | `TEXT` | Extracted text from resume for RAG embeddings |
 | `updated_at` | `TIMESTAMPTZ` | Last profile update time |
 
 ```sql
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     skills TEXT[] DEFAULT '{}',
     resume_url TEXT DEFAULT '',
     resume_name TEXT DEFAULT '',
+    resume_text TEXT DEFAULT '',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
