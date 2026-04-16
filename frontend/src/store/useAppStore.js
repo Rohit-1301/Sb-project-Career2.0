@@ -77,27 +77,30 @@ const useAppStore = create((set, get) => ({
   // fetchRecommendations — load cached AI job matches from backend
   // Falls back to running the full RAG pipeline if no cache exists
   // ────────────────────────────────────────────────────────────────────────
-  fetchRecommendations: async (userId) => {
+  fetchRecommendations: async (userId, forceRefresh = false) => {
     if (!userId) return;
     set({ jobsLoading: true });
     try {
-      // 1. Try cached results first
-      const cached = await getRecommendations(userId, 10);
-
-      if (cached.status === 'success' && cached.jobs?.length > 0) {
-        set({
-          jobs: cached.jobs,
-          aiInsights: cached.insights || {},
-          insights: _insightsToProgressBars(cached.insights),
-          jobsLoading: false,
-        });
-        return;
+      // Skip cache entirely on forceRefresh — go straight to full AI pipeline
+      if (!forceRefresh) {
+        const cached = await getRecommendations(userId, 10);
+        // Only trust cache if jobs have real AI alignment_review data
+        const hasAlignment = cached.jobs?.some(j => j.alignment_review);
+        if (cached.status === 'success' && cached.jobs?.length > 0 && hasAlignment) {
+          set({
+            jobs: cached.jobs,
+            aiInsights: cached.insights || {},
+            insights: _insightsToProgressBars(cached.insights),
+            jobsLoading: false,
+          });
+          return;
+        }
       }
 
-      // 2. No cache → run the full RAG pipeline
-      toast.loading('Running AI job matching… this may take ~10 seconds.', {
+      // Run the full RAG pipeline (fresh AI analysis)
+      toast.loading('Running AI job matching\u2026 this may take ~15 seconds.', {
         id: 'rag-loading',
-        duration: 15000,
+        duration: 20000,
       });
 
       const result = await runJobFit(userId);

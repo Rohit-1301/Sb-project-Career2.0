@@ -267,6 +267,46 @@ app.include_router(jobs_router, prefix="/api", tags=["Jobs"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 
+@app.get("/api/debug/llm")
+async def debug_llm():
+    """
+    Debug endpoint: probes each Gemini model and returns which one succeeds.
+    Visit http://localhost:8000/api/debug/llm to diagnose AI issues.
+    """
+    from services.llm_service import _MODELS_TO_TRY, _build_chain
+    import os, re, json as _json
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    results = {}
+
+    test_payload = {
+        "profile_text": "Full Stack Developer | React, Node.js, Python | 2 years experience",
+        "job_count": 1,
+        "jobs_text": "1. [test-123] Senior Developer at ACME (Bangalore) | 2-4 years | Match: 75%\n   Description: Full stack role requiring React, Node.js, and basic DevOps knowledge."
+    }
+
+    for model in _MODELS_TO_TRY:
+        try:
+            chain = _build_chain(model)
+            raw = chain.invoke(test_payload)
+            results[model] = {
+                "status": "✅ SUCCESS",
+                "response_length": len(raw),
+                "snippet": raw[:300]
+            }
+            break  # Stop at first working model
+        except Exception as exc:
+            results[model] = {
+                "status": f"❌ FAILED: {type(exc).__name__}",
+                "error": str(exc)[:200]
+            }
+
+    return {
+        "api_key_set": bool(api_key),
+        "models_tested": results
+    }
+
+
 @app.on_event("startup")
 async def startup_event():
     import logging

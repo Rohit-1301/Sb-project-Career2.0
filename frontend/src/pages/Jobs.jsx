@@ -37,7 +37,7 @@ const Jobs = () => {
   };
 
   const handleRefresh = () => {
-    if (user?.id) fetchRecommendations(user.id);
+    if (user?.id) fetchRecommendations(user.id, true); // forceRefresh=true bypasses cache
   };
 
   return (
@@ -272,28 +272,73 @@ const Jobs = () => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700/50 flex flex-col gap-4 overflow-hidden"
+                        className="overflow-hidden"
                       >
-                        <div>
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Areas to Improve</p>
+                        <div className="px-6 py-5 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/60 dark:to-gray-900/40 border-t border-gray-100 dark:border-gray-700/50 flex flex-col gap-5">
+
+                          {/* Match score bar */}
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Your Alignment Score</p>
+                              <span className={`text-sm font-extrabold ${job.match >= 85 ? 'text-green-600 dark:text-green-400' : job.match >= 65 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}>{job.match}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${job.match}%` }}
+                                transition={{ duration: 0.6, ease: 'easeOut' }}
+                                className={`h-full rounded-full ${job.match >= 85 ? 'bg-green-500' : job.match >= 65 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Matched skills */}
+                          {(job.skills || []).length > 0 && (
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">✅ Skills You Already Have</p>
+                              <div className="flex flex-wrap gap-2">
+                                {job.skills.map((skill) => (
+                                  <span key={skill} className="px-2.5 py-1 text-xs font-semibold bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50 rounded-md flex items-center gap-1">
+                                    <CheckCircle2 size={10} /> {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Areas to improve */}
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">⚠️ Skills to Develop</p>
                             <div className="flex flex-wrap gap-2">
                               {(job.missing_skills || []).length > 0 ? job.missing_skills.map((skill) => (
                                 <span key={skill} className="px-2.5 py-1 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 rounded-md flex items-center gap-1">
                                   <AlertCircle size={10} /> {skill}
                                 </span>
                               )) : (
-                                <span className="text-sm text-gray-500">You matched perfectly! No critical missing skills.</span>
+                                <span className="text-sm text-green-600 dark:text-green-400 font-medium">🎉 No critical gaps — you are a strong candidate!</span>
                               )}
                             </div>
+                          </div>
+
+                          {/* AI Alignment Review */}
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">🤖 AI Career Coach Analysis</p>
+                            {job.alignment_review ? (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                                {job.alignment_review.split('\n\n').filter(Boolean).map((section, idx) => (
+                                  <p key={idx} className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {section}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500 dark:text-gray-400 italic p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                Click <strong>Refresh</strong> above to generate a personalized AI analysis for this role.
+                              </p>
+                            )}
+                          </div>
+
                         </div>
-                        {job.improvement_tips && (
-                            <div>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">AI Coach Tip</p>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
-                                   {job.improvement_tips}
-                                </p>
-                            </div>
-                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>

@@ -142,21 +142,43 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
         if isinstance(top_jobs, str):
             import json
             top_jobs = json.loads(top_jobs)
-        return {
-            "status": "success",
-            "cached": True,
-            "match_score": cached.get("match_score", 0),
-            "matching_skills": cached.get("matching_skills", []),
-            "missing_skills": cached.get("missing_skills", []),
-            "suggestions": cached.get("suggestions", []),
-            "top_jobs": top_jobs,
-        }
+        # Only trust cache if jobs already carry alignment_review (new schema).
+        # Old cached data without it gets invalidated so we regenerate.
+        has_alignment = any(j.get("alignment_review") for j in top_jobs) if top_jobs else False
+        if has_alignment:
+            return {
+                "status": "success",
+                "cached": True,
+                "match_score": cached.get("match_score", 0),
+                "matching_skills": cached.get("matching_skills", []),
+                "missing_skills": cached.get("missing_skills", []),
+                "suggestions": cached.get("suggestions", []),
+                "top_jobs": top_jobs,
+            }
+        else:
+            logger.info(f"Stale cache (no alignment_review) for {user_id} — clearing & regenerating.")
+            supabase.table("insights_cache").delete().eq("user_id", user_id).execute()
 
     # ── 2. Fetch profile ──────────────────────────────────────────────────
     profile = _fetch_profile(supabase, user_id)
     profile_text = build_profile_text(profile)
 
-    if not profile_text.strip():
+    # Log exactly what we have so we can debug in Docker logs
+    logger.info(f"📋 Profile for {user_id}: title='{profile.get('title')}', "
+                f"skills={profile.get('skills')}, experience='{profile.get('experience')}', "
+                f"bio_len={len(profile.get('bio') or '')}, "
+                f"resume_text_len={len(profile.get('resume_text') or '')}")
+    logger.info(f"📋 profile_text built: '{profile_text[:200]}'")
+
+    # Accept the profile if it has ANY useful career signal
+    has_profile_signal = any([
+        profile.get("title", "").strip(),
+        profile.get("skills"),
+        profile.get("bio", "").strip(),
+        profile.get("experience", "").strip() not in ("", "0-1 years"),
+    ])
+
+    if not has_profile_signal:
         return {
             "status": "incomplete_profile",
             "message": "Please complete your profile (title, skills, experience) before running job fit.",
@@ -201,7 +223,7 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
         ji["job_id"]: {
             "matched_skills": ji.get("matched_skills", []),
             "missing_skills": ji.get("missing_skills", []),
-            "improvement_tips": ji.get("improvement_tips", "")
+            "alignment_review": ji.get("alignment_review", "")
         }
         for ji in insights.get("job_insights", [])
     }
@@ -209,11 +231,16 @@ def run_job_fit_pipeline(user_id: str) -> Dict[str, Any]:
         ji = job_insights_map.get(str(job["id"]), {})
         job["skills"] = ji.get("matched_skills", [])
         job["missing_skills"] = ji.get("missing_skills", [])
-        job["improvement_tips"] = ji.get("improvement_tips", "")
+        job["alignment_review"] = ji.get("alignment_review", "")
 
-    # ── 7. Persist to Supabase ────────────────────────────────────────────
-    _save_job_matches(supabase, user_id, top_jobs)
-    _save_insights_cache(supabase, user_id, insights, top_jobs)
+    # ── 7. Persist to Supabase (only if LLM generated real insights) ─────
+    has_real_insights = any(j.get("alignment_review") for j in top_jobs)
+    if has_real_insights:
+        _save_job_matches(supabase, user_id, top_jobs)
+        _save_insights_cache(supabase, user_id, insights, top_jobs)
+        logger.info(f"✅ Saved insights + job matches for user {user_id}")
+    else:
+        logger.warning(f"⚠️ LLM returned no alignment_review — skipping cache save for {user_id}. Will regenerate next request.")
 
     # ── 8. Return response ────────────────────────────────────────────────
     return {
